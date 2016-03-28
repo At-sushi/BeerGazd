@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8" ?> 
 <!--
 	BeerGazd
 	Copyright (C) 2016 YUTOPER
@@ -15,7 +16,6 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<?xml version="1.0" encoding="utf-8" ?> 
 <application xmlns="http://ns.adobe.com/air/application/3.9"> 
 	
 	<id>BeerGazd</id> 
