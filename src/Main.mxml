@@ -19,16 +19,25 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
                        xmlns:s="library://ns.adobe.com/flex/spark"
                        xmlns:mx="library://ns.adobe.com/flex/mx"
-    creationComplete="initApp()">
+    creationComplete="initApp()" mouseDown="nativeWindow.startMove()">
 	
 	<fx:Script>
 		<![CDATA[
+import mx.events.StateChangeEvent;
+import mx.events.VideoEvent;
 			private function initApp():void{
 				addEventListener(InvokeEvent.INVOKE, invokeHandler);
+				video.autoRewind = false;
+				video.addEventListener(mx.events.VideoEvent.STATE_CHANGE, stateChangeHandler);
 			}
 
 			private function invokeHandler(event:InvokeEvent):void{
 				address.text = event.arguments.shift();
+			}			
+
+			private function stateChangeHandler(event:mx.events.VideoEvent):void{
+				if (event.state == mx.events.VideoEvent.STOPPED)
+					video.play();
 			}			
 		]]>
 	</fx:Script>
@@ -36,8 +45,8 @@
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	<mx:VBox width="100%" height="100%">
-		<mx:TextInput id="address" text="" width="100%" enter="video.source = address.text"/>
-		<mx:VideoDisplay id="video" width="100%" height="100%" />
+		<mx:TextInput id="address" text="" width="100%" enter="video.source = address.text; video.play()"/>
+		<mx:VideoDisplay id="video" width="100%" height="100%"/>
 	</mx:VBox>
 	
 </s:WindowedApplication>
