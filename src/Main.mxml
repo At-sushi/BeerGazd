@@ -19,34 +19,57 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
                        xmlns:s="library://ns.adobe.com/flex/spark"
                        xmlns:mx="library://ns.adobe.com/flex/mx"
-    creationComplete="initApp()" mouseDown="nativeWindow.startMove()">
+    creationComplete="initApp()" mouseDown="if (stage.displayState == flash.display.StageDisplayState.NORMAL) nativeWindow.startMove()">
 	
 	<fx:Script>
 		<![CDATA[
+import flash.events.Event;
 import mx.events.StateChangeEvent;
 import mx.events.VideoEvent;
+import flash.display.NativeMenu;
+import flash.display.NativeMenuItem;
+import org.osmf.events.TimeEvent;
+
 			private function initApp():void{
 				addEventListener(InvokeEvent.INVOKE, invokeHandler);
 				video.autoRewind = false;
-				video.addEventListener(mx.events.VideoEvent.STATE_CHANGE, stateChangeHandler);
+				video.addEventListener(org.osmf.events.TimeEvent.COMPLETE, stateChangeHandler);
+				
+				initMenu();
 			}
 
 			private function invokeHandler(event:InvokeEvent):void{
 				address.text = event.arguments.shift();
 			}			
 
-			private function stateChangeHandler(event:mx.events.VideoEvent):void{
-				if (event.state == mx.events.VideoEvent.STOPPED)
-					video.play();
+			private function stateChangeHandler(event:org.osmf.events.TimeEvent):void{
+				video.play();
 			}			
+			
+			private function createMenuItem(name:String, onSelect:Function):NativeMenuItem {
+				var menuItem:NativeMenuItem = new NativeMenuItem(name);
+				
+				menuItem.addEventListener(Event.SELECT, onSelect);
+				return menuItem;
+			}
+			
+			private function initMenu():void 
+			{
+				var menu:NativeMenu = new NativeMenu();
+				
+				menu.addItem(createMenuItem("フルスクリーン", function(e:Event):void {
+					stage.displayState = flash.display.StageDisplayState.FULL_SCREEN_INTERACTIVE;
+				}));
+				menuTarget.contextMenu = menu;
+			}
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
-	<mx:VBox width="100%" height="100%">
-		<mx:TextInput id="address" text="" width="100%" enter="video.source = address.text; video.play()"/>
-		<mx:VideoDisplay id="video" width="100%" height="100%"/>
+	<mx:VBox width="100%" height="100%" id="menuTarget">
+		<mx:TextInput id="address" text="" width="100%" enter="video.source = address.text; video.play(); video.videoObject.smoothing = true;"/>
+		<s:VideoDisplay id="video" width="100%" height="100%"/>
 	</mx:VBox>
 	
 </s:WindowedApplication>
