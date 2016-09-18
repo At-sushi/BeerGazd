@@ -19,7 +19,8 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
                        xmlns:s="library://ns.adobe.com/flex/spark"
                        xmlns:mx="library://ns.adobe.com/flex/mx"
-    creationComplete="initApp()" mouseDown="if (stage.displayState == flash.display.StageDisplayState.NORMAL) nativeWindow.startMove()">
+    creationComplete="initApp()" mouseDown="if (stage.displayState == flash.display.StageDisplayState.NORMAL) nativeWindow.startMove()"
+	doubleClickEnabled="true" doubleClick="toggleFullScreen(null)">
 	
 	<fx:Script>
 		<![CDATA[
@@ -28,37 +29,80 @@ import mx.events.StateChangeEvent;
 import mx.events.VideoEvent;
 import flash.display.NativeMenu;
 import flash.display.NativeMenuItem;
-import org.osmf.events.TimeEvent;
+import org.osmf.events.MediaPlayerStateChangeEvent;
+import flash.net.*;
 
 			private function initApp():void{
 				addEventListener(InvokeEvent.INVOKE, invokeHandler);
 				video.autoRewind = false;
-				video.addEventListener(org.osmf.events.TimeEvent.COMPLETE, stateChangeHandler);
+				video.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, stateChangeHandler);
 				
 				initMenu();
 			}
 
 			private function invokeHandler(event:InvokeEvent):void{
-				address.text = event.arguments.shift();
+				LoadBitmapData(event.arguments[0]);
+				nativeWindow.title = event.arguments[1];
 			}			
-
-			private function stateChangeHandler(event:org.osmf.events.TimeEvent):void{
+	
+			private var resultbd:String = null;
+	
+			public function LoadBitmapData(url:String):void
+			{
+				if (url == null)
+					return;
+					
+				var loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, onBLoaded);
+				loader.load(new URLRequest(url));	// ロード開始
+			}
+	
+			public function onBLoaded(ev:Event):void
+			{
+				var loader:URLLoader = URLLoader(ev.target);
+				address.text = loader.data;
+				
+				// ビデオ再生
+				video.source = address.text;
 				video.play();
+				video.videoObject.smoothing = true;
+				address.visible = false;
+			}
+
+			private function stateChangeHandler(event:MediaPlayerStateChangeEvent):void {
+				if (event.state == "Stopped") {
+					// リロード
+					video.stop();
+					video.play();
+				}
 			}			
 			
-			private function createMenuItem(name:String, onSelect:Function):NativeMenuItem {
+			private function createMenuItem(name:String, onSelect:Function, onPreparing:Function = null):NativeMenuItem {
 				var menuItem:NativeMenuItem = new NativeMenuItem(name);
 				
 				menuItem.addEventListener(Event.SELECT, onSelect);
+				menuItem.addEventListener(Event.PREPARING, onPreparing);
 				return menuItem;
 			}
 			
+			private function toggleFullScreen(e:Event):void
+			{
+				stage.displayState = (stage.displayState == flash.display.StageDisplayState.NORMAL)
+									 ? flash.display.StageDisplayState.FULL_SCREEN_INTERACTIVE
+									 : flash.display.StageDisplayState.NORMAL;
+			}
+				
 			private function initMenu():void 
 			{
 				var menu:NativeMenu = new NativeMenu();
 				
-				menu.addItem(createMenuItem("フルスクリーン", function(e:Event):void {
-					stage.displayState = flash.display.StageDisplayState.FULL_SCREEN_INTERACTIVE;
+				menu.addItem(createMenuItem("フルスクリーン(&F)", toggleFullScreen, function(e:Event):void {
+					e.target.checked = (stage.displayState == flash.display.StageDisplayState.FULL_SCREEN_INTERACTIVE);
+				}));
+				menu.addItem(createMenuItem("最前面固定(&T)", function(e:Event):void {
+					stage.nativeWindow.alwaysInFront = !stage.nativeWindow.alwaysInFront;
+				}, function(e:Event):void {
+					e.target.checked = stage.nativeWindow.alwaysInFront;
 				}));
 				menuTarget.contextMenu = menu;
 			}
@@ -68,7 +112,7 @@ import org.osmf.events.TimeEvent;
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	<mx:VBox width="100%" height="100%" id="menuTarget">
-		<mx:TextInput id="address" text="" width="100%" enter="video.source = address.text; video.play(); video.videoObject.smoothing = true;"/>
+		<mx:TextInput id="address" text="" width="100%" visible="false"/>
 		<s:VideoDisplay id="video" width="100%" height="100%"/>
 	</mx:VBox>
 	
